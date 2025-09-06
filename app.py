@@ -9,8 +9,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# ---------------------- MODELS ----------------------
-
 class College(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -26,7 +24,7 @@ class Student(db.Model):
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    type = db.Column(db.String(50), nullable=False)  # Workshop, Fest, Seminar
+    type = db.Column(db.String(50), nullable=False)  
     date = db.Column(db.String(50), nullable=False)
     college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
 
@@ -43,17 +41,15 @@ class Attendance(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
     present = db.Column(db.Boolean, default=True)
-    status = db.Column(db.String(20), nullable=False)  # Present, Absent, Excused
+    status = db.Column(db.String(20), nullable=False)  
 
 
 class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
-    rating = db.Column(db.Integer, nullable=False)  # 1–5
+    rating = db.Column(db.Integer, nullable=False)  
 
-
-# ---------------------- ROUTES ----------------------
 
 @app.route("/")
 def home():
@@ -67,14 +63,12 @@ def create_student():
     db.session.commit()
     return jsonify({"id": student.id, "name": student.name})
 
-
-# ---- Create Event ----
 @app.route("/events", methods=["POST"])
 def create_event():
     data = request.json
     event = Event(
         title=data['title'],
-        type=data['type'],   # 👈 here
+        type=data['type'],   
         date=data['date'],
         college_id=data['college_id']
     )
@@ -82,8 +76,6 @@ def create_event():
     db.session.commit()
     return jsonify({"message": "Event created", "event_id": event.id})
 
-
-# ---- Register Student ----
 @app.route("/register", methods=["POST"])
 def register_student():
     data = request.json
@@ -95,8 +87,6 @@ def register_student():
     except:
         return jsonify({"error": "Duplicate registration"}), 400
 
-
-# ---- Mark Attendance ----
 @app.route("/attendance", methods=["POST"])
 def mark_attendance():
     data = request.json
@@ -105,8 +95,6 @@ def mark_attendance():
     db.session.commit()
     return jsonify({"message": "Attendance marked"})
 
-
-# ---- Submit Feedback ----
 @app.route("/feedback", methods=["POST"])
 def submit_feedback():
     data = request.json
@@ -122,9 +110,7 @@ def create_college():
     db.session.add(college)
     db.session.commit()
     return jsonify({"id": college.id, "name": college.name})
-# ---------------------- REPORTS ----------------------
 
-# Event Popularity Report
 @app.route("/reports/event-popularity", methods=["GET"])
 def event_popularity():
     results = db.session.query(Event.title, func.count(Registration.id).label("registrations")) \
@@ -150,9 +136,6 @@ def student_participation(student_id):
         "events_attended": events
     })
 
-
-
-# Top 3 Most Active Students
 @app.route("/reports/top-students", methods=["GET"])
 def top_students():
     results = db.session.query(Student.name, func.count(Attendance.id).label("events")) \
@@ -162,21 +145,16 @@ def top_students():
         .order_by(func.count(Attendance.id).desc()).limit(3).all()
     return jsonify([{"student": r[0], "events_attended": r[1]} for r in results])
 
-
-# Filter Events by Type
 @app.route("/reports/filter", methods=["GET"])
 def filter_events():
     event_type = request.args.get("type")
     results = Event.query.filter(func.lower(Event.type) == func.lower(event_type)).all()
     return jsonify([{"id": e.id, "title": e.title, "date": e.date, "type": e.type} for e in results])
 
-
-# ---------------------- MAIN ----------------------
-
 if __name__ == "__main__":
     print(app.url_map)
 
     with app.app_context():
-        db.create_all()  # This creates all tables (Event, Student, etc.)
+        db.create_all()  
     app.run(debug=True)
 
